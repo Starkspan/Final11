@@ -1,5 +1,5 @@
 {
-  "name": "ocr-logging-backend-starkspan",
+  "name": "semantic-ocr-backend-v10",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
