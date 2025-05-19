@@ -1,98 +1,43 @@
-
-const express = require("express");
-const multer = require("multer");
-const cors = require("cors");
-const fetch = require("node-fetch");
-require("dotenv").config();
+const express = require('express');
+const cors = require('cors');
+const multer = require('multer');
+const axios = require('axios');
+const FormData = require('form-data');
+const fs = require('fs');
+const path = require('path');
 
 const app = express();
-const upload = multer();
+const upload = multer({ dest: 'uploads/' });
 app.use(cors());
+app.use(express.static('public'));
 
-function extract(text, regexList) {
-  for (let regex of regexList) {
-    const match = text.match(regex);
-    if (match) return match[1] || match[0];
-  }
-  return "-";
-}
-
-function gewichtAlsZahl(raw) {
-  if (!raw) return 0.1;
-  let g = parseFloat(raw.replace(",", "."));
-  if (isNaN(g) || g < 0.001 || g > 50) return 0.1;
-  return g;
-}
-
-app.post("/analyze", upload.single("file"), async (req, res) => {
-  if (!req.file) return res.status(400).json({ error: "Keine Datei hochgeladen." });
-
+app.post('/analyze', upload.single('file'), async (req, res) => {
   try {
-    const ocr = await fetch("https://api.ocr.space/parse/image", {
-      method: "POST",
-      headers: { apikey: process.env.OCR_API_KEY },
-      body: new URLSearchParams({
-        base64Image: "data:application/pdf;base64," + req.file.buffer.toString("base64"),
-        isOverlayRequired: "false",
-        language: "ger"
-      }),
-      timeout: 20000
+    const filePath = req.file.path;
+
+    const formData = new FormData();
+    formData.append('apikey', 'K81799995088957');
+    formData.append('file', fs.createReadStream(filePath));
+    formData.append('language', 'eng');
+    formData.append('OCREngine', '2');
+
+    const ocrRes = await axios.post('https://api.ocr.space/parse/image', formData, {
+      headers: formData.getHeaders(),
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity
     });
 
-    const result = await ocr.json();
-    const text = result?.ParsedResults?.[0]?.ParsedText || "";
+    fs.unlinkSync(filePath); // Temp-Datei löschen
 
-    const zeichnungsnummer = extract(text, [
-      /(Artikel[- ]?Nr\.?\s*[:\-]?\s*)([A-Z0-9\-]{6,})/,
-      /(Zeichnungsnummer\s*[:\-]?\s*)([A-Z0-9\-]{6,})/,
-      /\b([A-Z]?\d{6,})\b/
-    ]);
-
-    const material = extract(text, [
-      /Werkstoff\s*[:\-]?\s*([A-Z0-9\.\-\s]{4,})/,
-      /Material\s*[:\-]?\s*([A-Z0-9\.\-\s]{4,})/,
-      /(1\.[0-9]{3})/
-    ]);
-
-    const masse = extract(text, [
-      /([Ø∅⌀]?[ ]?[0-9]{1,3}[\.,]?[0-9]{0,2}) ?[×xX\*] ?([0-9]{1,4})/,
-      /([0-9]{1,3}[.,]?[0-9]{0,2}) ?mm/
-    ]);
-
-    const gewicht = extract(text, [
-      /Gewicht\s*[:=]?\s*([0-9]+[\.,]?[0-9]*) ?(kg|g)?/,
-      /([0-9]{1,3}[\.,]?[0-9]{1,3}) ?kg/
-    ]);
-
-    const gKg = gewichtAlsZahl(gewicht);
-
-    const rüst = 60, prog = 60, satz = 35, materialPreis = 7, marge = 1.15;
-    const laufzeitMin = Math.round(Math.max(1, gKg * 8));
-    const laufzeitKosten = (laufzeitMin / 60) * satz;
-    const matKosten = gKg * materialPreis;
-    const grundpreis = (rüst + prog + laufzeitKosten + matKosten) * marge;
-
-    const preisStaffel = {};
-    [1, 10, 25, 50, 100].forEach(n => {
-      const fix = (rüst + prog) / n;
-      const gesamt = (fix + laufzeitKosten + matKosten) * marge;
-      preisStaffel[n] = gesamt.toFixed(2);
-    });
-
-    res.json({
-      zeichnungsnummer,
-      material,
-      masse,
-      gewicht: gKg + " kg",
-      laufzeit: laufzeitMin + " min",
-      preis: preisStaffel
-    });
+    const parsed = ocrRes.data?.ParsedResults?.[0]?.ParsedText || '';
+    res.json({ text: parsed });
 
   } catch (err) {
-    console.error("❌ Fehler:", err.message);
-    res.status(500).json({ error: "Analysefehler: " + err.message });
+    res.status(500).json({ error: 'Analysefehler', details: err.message });
   }
 });
 
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log("🟢 V11-Backend aktiv auf Port", PORT));
+app.listen(PORT, () => {
+  console.log('OCR.space Proxy läuft auf Port', PORT);
+});
