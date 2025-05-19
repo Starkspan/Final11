@@ -1,5 +1,5 @@
 {
-  "name": "ocr-logging-backend-starkspan",
+  "name": "starkspan-backend-v11",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
