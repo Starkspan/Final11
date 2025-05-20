@@ -10,15 +10,19 @@ app.use(fileUpload());
 const materialDB = require('./material_db_v13.json');
 
 function detectMaterialFromOCR(ocrText, db) {
-  const text = ocrText.toLowerCase();
-  const keywords = ["material", "werkstoff", "mat.", "stoff", "werkstoffnummer", "mat-nr"];
+  const lines = ocrText.toLowerCase().split(/\r?\n/);
+  const materialKeywords = ["werkstoff", "material", "halbzeug", "werkstoff/halbzeug", "mat."];
 
-  if (!keywords.some(k => text.includes(k))) return "-";
-
-  for (const material of db) {
-    for (const nummer of material.nummern) {
-      if (text.includes(nummer.toLowerCase())) {
-        return material.name;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (materialKeywords.some(k => line.includes(k))) {
+      const nextLine = (lines[i + 1] || "") + " " + line;
+      for (const material of db) {
+        for (const nummer of material.nummern) {
+          if (nextLine.includes(nummer.toLowerCase())) {
+            return material.name;
+          }
+        }
       }
     }
   }
@@ -49,5 +53,5 @@ app.post('/analyze', async (req, res) => {
 });
 
 app.listen(3000, () => {
-  console.log('Backend V13 mit Materialerkennung läuft auf Port 3000');
+  console.log('Backend V13 (robust) läuft auf Port 3000');
 });
