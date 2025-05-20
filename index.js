@@ -1,68 +1,53 @@
+
 const express = require('express');
-const multer = require('multer');
-const cors = require('cors');
+const fileUpload = require('express-fileupload');
 const fs = require('fs');
-const fetch = require('node-fetch');
-const path = require('path');
+const { createWorker } = require('tesseract.js');
 
 const app = express();
-const upload = multer({ dest: 'uploads/' });
-app.use(cors());
-app.use(express.json());
+app.use(fileUpload());
 
-const API_KEY = "K81799995088957"; // OCR.space API-Key
+const materialDB = require('./material_db_v13.json');
 
-app.post('/analyze', upload.single('file'), async (req, res) => {
-    try {
-        const filePath = req.file.path;
+function detectMaterialFromOCR(ocrText, db) {
+  const text = ocrText.toLowerCase();
+  const keywords = ["material", "werkstoff", "mat.", "stoff", "werkstoffnummer", "mat-nr"];
 
-        const formData = new FormData();
-        formData.append('file', fs.createReadStream(filePath));
-        formData.append('language', 'eng');
-        formData.append('isOverlayRequired', 'false');
-        formData.append('OCREngine', '2');
-        formData.append('scale', 'true');
+  if (!keywords.some(k => text.includes(k))) return "-";
 
-        const response = await fetch("https://api.ocr.space/parse/image", {
-            method: 'POST',
-            headers: { apikey: API_KEY },
-            body: formData
-        });
-
-        const result = await response.json();
-        fs.unlinkSync(filePath); // Datei löschen nach Analyse
-
-        const parsedText = result.ParsedResults?.[0]?.ParsedText || "";
-
-        // Einfache Extraktion – später durch KI ersetzen
-        const materialMatch = parsedText.match(/1\.[0-9]+\s?[A-Za-z0-9\s]+/);
-        const weightMatch = parsedText.match(/Gewicht\s*([0-9\.,]+)\s*kg/i);
-        const numberMatch = parsedText.match(/Artikel-Nr\.?[:\s]*([A-Z0-9]+)/i);
-
-        const material = materialMatch ? materialMatch[0] : "-";
-        const weight = weightMatch ? parseFloat(weightMatch[1].replace(",", ".")) : 0.1;
-        const drawingNumber = numberMatch ? numberMatch[1] : "Unbekannt";
-
-        const baseCost = 60 + 30 + (weight * 35); // Rüst + Programmierung + Fertigung
-        const margin = 1.15;
-        const finalPrice = baseCost * margin;
-
-        const prices = [1, 10, 25, 50, 100].map(qty => ({
-            qty,
-            price: (finalPrice / Math.pow(qty, 0.35)).toFixed(2)
-        }));
-
-        res.json({
-            zeichnungsnummer: drawingNumber,
-            material,
-            gewicht: weight + " kg",
-            staffelpreise: prices
-        });
-    } catch (err) {
-        res.status(500).json({ error: "Analysefehler: " + err.message });
+  for (const material of db) {
+    for (const nummer of material.nummern) {
+      if (text.includes(nummer.toLowerCase())) {
+        return material.name;
+      }
     }
+  }
+  return "-";
+}
+
+app.post('/analyze', async (req, res) => {
+  if (!req.files || !req.files.file) {
+    return res.status(400).send('No file uploaded.');
+  }
+
+  const imageFile = req.files.file;
+  const filePath = './temp_image.png';
+  await imageFile.mv(filePath);
+
+  const worker = await createWorker('eng');
+  await worker.loadLanguage('eng');
+  await worker.initialize('eng');
+  const { data: { text } } = await worker.recognize(filePath);
+  await worker.terminate();
+
+  const material = detectMaterialFromOCR(text, materialDB);
+
+  res.json({
+    material,
+    ocrText: text
+  });
 });
 
-app.listen(10000, () => {
-    console.log("✅ Starkspan V12 Backend läuft auf Port 10000");
+app.listen(3000, () => {
+  console.log('Backend V13 mit Materialerkennung läuft auf Port 3000');
 });
