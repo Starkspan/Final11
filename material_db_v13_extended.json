@@ -1,0 +1,123 @@
+[
+  {
+    "name": "Aluminium",
+    "nummern": [
+      "AlMg3",
+      "EN AW-5754",
+      "3.3535",
+      "AlMgSi1",
+      "6061",
+      "6082",
+      "EN AW-6060",
+      "EN AW-6082"
+    ]
+  },
+  {
+    "name": "Edelstahl",
+    "nummern": [
+      "1.4301",
+      "1.4305",
+      "1.4571",
+      "X5CrNi18-10",
+      "V2A",
+      "V4A",
+      "1.4404",
+      "X2CrNiMo17-12-2",
+      "V2A",
+      "1.4301",
+      "X5CrNi18-10"
+    ]
+  },
+  {
+    "name": "Stahl",
+    "nummern": [
+      "S235JR",
+      "S355J2",
+      "1.0038",
+      "1.0570",
+      "C45",
+      "CK45",
+      "St37",
+      "E295",
+      "42CrMo4",
+      "C60"
+    ]
+  },
+  {
+    "name": "Werkzeugstahl",
+    "nummern": [
+      "1.2379",
+      "1.2842",
+      "1.2080",
+      "1.2312",
+      "1.2767",
+      "1.2436",
+      "1.2510",
+      "1.2344"
+    ]
+  },
+  {
+    "name": "Kupfer",
+    "nummern": [
+      "Cu-ETP",
+      "CW004A",
+      "2.0060",
+      "CuSn6",
+      "CuCrZr"
+    ]
+  },
+  {
+    "name": "Messing",
+    "nummern": [
+      "CuZn37",
+      "CW508L",
+      "2.0321",
+      "CuZn39Pb3",
+      "Ms58"
+    ]
+  },
+  {
+    "name": "Kunststoff",
+    "nummern": [
+      "PA6",
+      "PEEK",
+      "POM",
+      "PTFE",
+      "PVC",
+      "PE",
+      "PC",
+      "ABS",
+      "PP",
+      "PET"
+    ]
+  },
+  {
+    "name": "Titan",
+    "nummern": [
+      "Ti6Al4V",
+      "Grade 2",
+      "3.7035",
+      "3.7165"
+    ]
+  },
+  {
+    "name": "Guss",
+    "nummern": [
+      "GG25",
+      "EN-GJL-250",
+      "GJS-400",
+      "EN-GJS-400-15",
+      "GJL-250"
+    ]
+  },
+  {
+    "name": "Vergütungsstahl",
+    "nummern": [
+      "1.1213",
+      "Cf53",
+      "C53",
+      "Ck53",
+      "DIN C53"
+    ]
+  }
+]
