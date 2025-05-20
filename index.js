@@ -7,7 +7,7 @@ const { createWorker } = require('tesseract.js');
 const app = express();
 app.use(fileUpload());
 
-const materialDB = require('./material_db_v13.json');
+const materialDB = require('./material_db_v13_extended.json');
 
 function detectMaterialFromOCR(ocrText, db) {
   const lines = ocrText.toLowerCase().split(/\r?\n/);
